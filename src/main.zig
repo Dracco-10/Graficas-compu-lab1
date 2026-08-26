@@ -154,29 +154,41 @@ pub fn main(init: std.process.Init) !void {
     rl.InitWindow(800, 600, "Prueba Raylib");
     defer rl.CloseWindow();
 
-    var screenshot_taken = false;
+    const target = rl.LoadRenderTexture(800, 600);
+    defer rl.UnloadRenderTexture(target);
+
+    rl.BeginTextureMode(target);
+    rl.ClearBackground(rl.BLACK);
+
+    try drawFilledPolygon(gpa, &poligono1, rl.YELLOW);
+    try drawFilledPolygon(gpa, &poligono2, rl.BLUE);
+    try drawFilledPolygon(gpa, &poligono3, rl.RED);
+    try drawFilledPolygonWithHole(gpa, &poligono4, &agujero4, rl.GREEN);
+
+    drawOutline(&poligono1);
+    drawOutline(&poligono2);
+    drawOutline(&poligono3);
+    drawOutline(&poligono4);
+    drawOutline(&agujero4);
+
+    rl.EndTextureMode();
+
+    var image = rl.LoadImageFromTexture(target.texture);
+    defer rl.UnloadImage(image);
+    rl.ImageFlipVertical(&image);
+    _ = rl.ExportImage(image, "out.bmp");
 
     while (!rl.WindowShouldClose()) {
         rl.BeginDrawing();
         defer rl.EndDrawing();
 
         rl.ClearBackground(rl.BLACK);
-
-        try drawFilledPolygon(gpa, &poligono1, rl.YELLOW);
-        try drawFilledPolygon(gpa, &poligono2, rl.BLUE);
-        try drawFilledPolygon(gpa, &poligono3, rl.RED);
-        try drawFilledPolygonWithHole(gpa, &poligono4, &agujero4, rl.GREEN);
-
-        drawOutline(&poligono1);
-        drawOutline(&poligono2);
-        drawOutline(&poligono3);
-        drawOutline(&poligono4);
-        drawOutline(&agujero4);
-
-        if (!screenshot_taken) {
-            rl.TakeScreenshot("out.bmp");
-            screenshot_taken = true;
-        }
+        rl.DrawTextureRec(
+            target.texture,
+            .{ .x = 0, .y = 0, .width = 800, .height = -600 },
+            .{ .x = 0, .y = 0 },
+            rl.WHITE,
+        );
     }
 
     const arena: std.mem.Allocator = init.arena.allocator();
