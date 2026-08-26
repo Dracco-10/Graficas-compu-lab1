@@ -154,6 +154,8 @@ pub fn main(init: std.process.Init) !void {
     rl.InitWindow(800, 600, "Prueba Raylib");
     defer rl.CloseWindow();
 
+    var screenshot_taken = false;
+
     while (!rl.WindowShouldClose()) {
         rl.BeginDrawing();
         defer rl.EndDrawing();
@@ -170,6 +172,11 @@ pub fn main(init: std.process.Init) !void {
         drawOutline(&poligono3);
         drawOutline(&poligono4);
         drawOutline(&agujero4);
+
+        if (!screenshot_taken) {
+            rl.TakeScreenshot("out.bmp");
+            screenshot_taken = true;
+        }
     }
 
     const arena: std.mem.Allocator = init.arena.allocator();
