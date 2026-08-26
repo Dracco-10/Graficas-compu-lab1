@@ -7,11 +7,29 @@ const Point = struct {
     x: f32,
     y: f32,
 };
-const polygon1 = [_]Point{
+
+const poligono1 = [_]Point{
+    .{ .x = 165, .y = 380 },
+    .{ .x = 185, .y = 360 },
+    .{ .x = 188, .y = 330 },
+    .{ .x = 207, .y = 345 },
+    .{ .x = 233, .y = 330 },
+    .{ .x = 230, .y = 360 },
+    .{ .x = 250, .y = 380 },
+    .{ .x = 220, .y = 385 },
+    .{ .x = 205, .y = 410 },
+    .{ .x = 193, .y = 383 },
+};
+const poligono2 = [_]Point{
     .{ .x = 321, .y = 335 },
     .{ .x = 288, .y = 286 },
     .{ .x = 339, .y = 251 },
     .{ .x = 374, .y = 302 },
+};
+const poligono3 = [_]Point{
+    .{ .x = 377, .y = 249 },
+    .{ .x = 411, .y = 197 },
+    .{ .x = 436, .y = 249 },
 };
 
 fn findIntersections(allocator: std.mem.Allocator, polygon: []const Point, y: f32) ![]f32 {
@@ -36,8 +54,43 @@ fn findIntersections(allocator: std.mem.Allocator, polygon: []const Point, y: f3
     return result;
 }
 
+fn drawFilledPolygon(allocator: std.mem.Allocator, polygon: []const Point, color: rl.Color) !void {
+    var y: f32 = 0;
+    while (y < 600) : (y += 1) {
+        const intersections = try findIntersections(allocator, polygon, y);
+        defer allocator.free(intersections);
+
+        var idx: usize = 0;
+        while (idx + 1 < intersections.len) : (idx += 2) {
+            const x_start = intersections[idx];
+            const x_end = intersections[idx + 1];
+            rl.DrawLine(
+                @intFromFloat(x_start),
+                @intFromFloat(y),
+                @intFromFloat(x_end),
+                @intFromFloat(y),
+                color,
+            );
+        }
+    }
+}
+
+fn drawOutline(polygon: []const Point) void {
+    var v: usize = 0;
+    while (v < polygon.len) : (v += 1) {
+        const p1 = polygon[v];
+        const p2 = polygon[(v + 1) % polygon.len];
+        rl.DrawLine(
+            @intFromFloat(p1.x),
+            @intFromFloat(p1.y),
+            @intFromFloat(p2.x),
+            @intFromFloat(p2.y),
+            rl.WHITE,
+        );
+    }
+}
+
 pub fn main(init: std.process.Init) !void {
-    // Prints to stderr, unbuffered, ignoring potential errors.
     std.debug.print("All your {s} are belong to us.\n", .{"codebase"});
     var gpa_state = std.heap.DebugAllocator(.{}){};
     const gpa = gpa_state.allocator();
@@ -51,67 +104,35 @@ pub fn main(init: std.process.Init) !void {
 
         rl.ClearBackground(rl.BLACK);
 
-        var y: f32 = 0;
-        while (y < 600) : (y += 1) {
-            const intersections = findIntersections(gpa, &polygon1, y) catch continue;
-            defer gpa.free(intersections);
+        try drawFilledPolygon(gpa, &poligono1, rl.YELLOW);
+        try drawFilledPolygon(gpa, &poligono2, rl.BLUE);
+        try drawFilledPolygon(gpa, &poligono3, rl.RED);
 
-            var v: usize = 0;
-            while (v < polygon1.len) : (v += 1) {
-                const p1 = polygon1[v];
-                const p2 = polygon1[(v + 1) % polygon1.len];
-                rl.DrawLine(
-                    @intFromFloat(p1.x),
-                    @intFromFloat(p1.y),
-                    @intFromFloat(p2.x),
-                    @intFromFloat(p2.y),
-                    rl.WHITE,
-                );
-            }
-
-            var idx: usize = 0;
-            while (idx + 1 < intersections.len) : (idx += 2) {
-                const x_start = intersections[idx];
-                const x_end = intersections[idx + 1];
-                rl.DrawLine(
-                    @intFromFloat(x_start),
-                    @intFromFloat(y),
-                    @intFromFloat(x_end),
-                    @intFromFloat(y),
-                    rl.BLUE,
-                );
-            }
-        }
+        drawOutline(&poligono1);
+        drawOutline(&poligono2);
+        drawOutline(&poligono3);
     }
 
-    // This is appropriate for anything that lives as long as the process.
     const arena: std.mem.Allocator = init.arena.allocator();
-
-    // Accessing command line arguments:
     const args = try init.minimal.args.toSlice(arena);
     for (args) |arg| {
         std.log.info("arg: {s}", .{arg});
     }
 
-    // In order to do I/O operations need an `Io` instance.
     const io = init.io;
-
-    // Stdout is for the actual output of your application, for example if you
-    // are implementing gzip, then only the compressed bytes should be sent to
-    // stdout, not any debugging messages.
     var stdout_buffer: [1024]u8 = undefined;
     var stdout_file_writer: Io.File.Writer = .init(.stdout(), io, &stdout_buffer);
     const stdout_writer = &stdout_file_writer.interface;
 
     try lab1_relleno_poligonos.printAnotherMessage(stdout_writer);
 
-    try stdout_writer.flush(); // Don't forget to flush!
+    try stdout_writer.flush();
 }
 
 test "simple test" {
     const gpa = std.testing.allocator;
     var list: std.ArrayList(i32) = .empty;
-    defer list.deinit(gpa); // Try commenting this out and see if zig detects the memory leak!
+    defer list.deinit(gpa);
     try list.append(gpa, 42);
     try std.testing.expectEqual(@as(i32, 42), list.pop());
 }
@@ -122,7 +143,6 @@ test "fuzz example" {
 
 fn testOne(context: void, smith: *std.testing.Smith) !void {
     _ = context;
-    // Try passing `--fuzz` to `zig build test` and see if it manages to fail this test case!
 
     const gpa = std.testing.allocator;
     var list: std.ArrayList(u8) = .empty;
