@@ -31,6 +31,32 @@ const poligono3 = [_]Point{
     .{ .x = 411, .y = 197 },
     .{ .x = 436, .y = 249 },
 };
+const poligono4 = [_]Point{
+    .{ .x = 413, .y = 177 },
+    .{ .x = 448, .y = 159 },
+    .{ .x = 502, .y = 88 },
+    .{ .x = 553, .y = 53 },
+    .{ .x = 535, .y = 36 },
+    .{ .x = 676, .y = 37 },
+    .{ .x = 660, .y = 52 },
+    .{ .x = 750, .y = 145 },
+    .{ .x = 761, .y = 179 },
+    .{ .x = 672, .y = 192 },
+    .{ .x = 659, .y = 214 },
+    .{ .x = 615, .y = 214 },
+    .{ .x = 632, .y = 230 },
+    .{ .x = 580, .y = 230 },
+    .{ .x = 597, .y = 215 },
+    .{ .x = 552, .y = 214 },
+    .{ .x = 517, .y = 144 },
+    .{ .x = 466, .y = 180 },
+};
+const agujero4 = [_]Point{
+    .{ .x = 682, .y = 175 },
+    .{ .x = 708, .y = 120 },
+    .{ .x = 735, .y = 148 },
+    .{ .x = 739, .y = 170 },
+};
 
 fn findIntersections(allocator: std.mem.Allocator, polygon: []const Point, y: f32) ![]f32 {
     var intersections: std.ArrayList(f32) = .empty;
@@ -75,6 +101,36 @@ fn drawFilledPolygon(allocator: std.mem.Allocator, polygon: []const Point, color
     }
 }
 
+fn drawFilledPolygonWithHole(allocator: std.mem.Allocator, polygon: []const Point, hole: []const Point, color: rl.Color) !void {
+    var y: f32 = 0;
+    while (y < 600) : (y += 1) {
+        const intersections1 = try findIntersections(allocator, polygon, y);
+        defer allocator.free(intersections1);
+        const intersections2 = try findIntersections(allocator, hole, y);
+        defer allocator.free(intersections2);
+
+        var all_intersections: std.ArrayList(f32) = .empty;
+        defer all_intersections.deinit(allocator);
+        for (intersections1) |x| try all_intersections.append(allocator, x);
+        for (intersections2) |x| try all_intersections.append(allocator, x);
+
+        std.mem.sort(f32, all_intersections.items, {}, std.sort.asc(f32));
+
+        var idx: usize = 0;
+        while (idx + 1 < all_intersections.items.len) : (idx += 2) {
+            const x_start = all_intersections.items[idx];
+            const x_end = all_intersections.items[idx + 1];
+            rl.DrawLine(
+                @intFromFloat(x_start),
+                @intFromFloat(y),
+                @intFromFloat(x_end),
+                @intFromFloat(y),
+                color,
+            );
+        }
+    }
+}
+
 fn drawOutline(polygon: []const Point) void {
     var v: usize = 0;
     while (v < polygon.len) : (v += 1) {
@@ -107,10 +163,13 @@ pub fn main(init: std.process.Init) !void {
         try drawFilledPolygon(gpa, &poligono1, rl.YELLOW);
         try drawFilledPolygon(gpa, &poligono2, rl.BLUE);
         try drawFilledPolygon(gpa, &poligono3, rl.RED);
+        try drawFilledPolygonWithHole(gpa, &poligono4, &agujero4, rl.GREEN);
 
         drawOutline(&poligono1);
         drawOutline(&poligono2);
         drawOutline(&poligono3);
+        drawOutline(&poligono4);
+        drawOutline(&agujero4);
     }
 
     const arena: std.mem.Allocator = init.arena.allocator();
