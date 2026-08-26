@@ -8,16 +8,10 @@ const Point = struct {
     y: f32,
 };
 const polygon1 = [_]Point{
-    .{ .x = 165, .y = 380 },
-    .{ .x = 185, .y = 360 },
-    .{ .x = 188, .y = 330 },
-    .{ .x = 207, .y = 345 },
-    .{ .x = 233, .y = 330 },
-    .{ .x = 230, .y = 360 },
-    .{ .x = 250, .y = 380 },
-    .{ .x = 220, .y = 385 },
-    .{ .x = 205, .y = 410 },
-    .{ .x = 193, .y = 383 },
+    .{ .x = 321, .y = 335 },
+    .{ .x = 288, .y = 286 },
+    .{ .x = 339, .y = 251 },
+    .{ .x = 374, .y = 302 },
 };
 
 fn findIntersections(allocator: std.mem.Allocator, polygon: []const Point, y: f32) ![]f32 {
@@ -84,7 +78,7 @@ pub fn main(init: std.process.Init) !void {
                     @intFromFloat(y),
                     @intFromFloat(x_end),
                     @intFromFloat(y),
-                    rl.YELLOW,
+                    rl.BLUE,
                 );
             }
         }
