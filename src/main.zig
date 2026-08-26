@@ -8,16 +8,30 @@ const Point = struct {
     y: f32,
 };
 const polygon1 = [_]Point{
-    .{ .x = 165, .y = 380 },
-    .{ .x = 185, .y = 360 },
-    .{ .x = 188, .y = 330 },
-    .{ .x = 207, .y = 345 },
-    .{ .x = 233, .y = 330 },
-    .{ .x = 230, .y = 360 },
-    .{ .x = 250, .y = 380 },
-    .{ .x = 220, .y = 385 },
-    .{ .x = 205, .y = 410 },
-    .{ .x = 193, .y = 383 },
+    .{ .x = 413, .y = 177 },
+    .{ .x = 448, .y = 159 },
+    .{ .x = 502, .y = 88 },
+    .{ .x = 553, .y = 53 },
+    .{ .x = 535, .y = 36 },
+    .{ .x = 676, .y = 37 },
+    .{ .x = 660, .y = 52 },
+    .{ .x = 750, .y = 145 },
+    .{ .x = 761, .y = 179 },
+    .{ .x = 672, .y = 192 },
+    .{ .x = 659, .y = 214 },
+    .{ .x = 615, .y = 214 },
+    .{ .x = 632, .y = 230 },
+    .{ .x = 580, .y = 230 },
+    .{ .x = 597, .y = 215 },
+    .{ .x = 552, .y = 214 },
+    .{ .x = 517, .y = 144 },
+    .{ .x = 466, .y = 180 },
+};
+const polygon2 = [_]Point{
+    .{ .x = 682, .y = 175 },
+    .{ .x = 708, .y = 120 },
+    .{ .x = 735, .y = 148 },
+    .{ .x = 739, .y = 170 },
 };
 
 fn findIntersections(allocator: std.mem.Allocator, polygon: []const Point, y: f32) ![]f32 {
@@ -59,34 +73,44 @@ pub fn main(init: std.process.Init) !void {
 
         var y: f32 = 0;
         while (y < 600) : (y += 1) {
-            const intersections = findIntersections(gpa, &polygon1, y) catch continue;
-            defer gpa.free(intersections);
+            const intersections1 = findIntersections(gpa, &polygon1, y) catch continue;
+            defer gpa.free(intersections1);
+            const intersections2 = findIntersections(gpa, &polygon2, y) catch continue;
+            defer gpa.free(intersections2);
 
-            var v: usize = 0;
-            while (v < polygon1.len) : (v += 1) {
-                const p1 = polygon1[v];
-                const p2 = polygon1[(v + 1) % polygon1.len];
-                rl.DrawLine(
-                    @intFromFloat(p1.x),
-                    @intFromFloat(p1.y),
-                    @intFromFloat(p2.x),
-                    @intFromFloat(p2.y),
-                    rl.WHITE,
-                );
-            }
+            var all_intersections: std.ArrayList(f32) = .empty;
+            defer all_intersections.deinit(gpa);
+            for (intersections1) |x| try all_intersections.append(gpa, x);
+            for (intersections2) |x| try all_intersections.append(gpa, x);
+
+            std.mem.sort(f32, all_intersections.items, {}, std.sort.asc(f32));
 
             var idx: usize = 0;
-            while (idx + 1 < intersections.len) : (idx += 2) {
-                const x_start = intersections[idx];
-                const x_end = intersections[idx + 1];
+            while (idx + 1 < all_intersections.items.len) : (idx += 2) {
+                const x_start = all_intersections.items[idx];
+                const x_end = all_intersections.items[idx + 1];
                 rl.DrawLine(
                     @intFromFloat(x_start),
                     @intFromFloat(y),
                     @intFromFloat(x_end),
                     @intFromFloat(y),
-                    rl.YELLOW,
+                    rl.GREEN,
                 );
             }
+        }
+
+        var v: usize = 0;
+        while (v < polygon1.len) : (v += 1) {
+            const p1 = polygon1[v];
+            const p2 = polygon1[(v + 1) % polygon1.len];
+            rl.DrawLine(@intFromFloat(p1.x), @intFromFloat(p1.y), @intFromFloat(p2.x), @intFromFloat(p2.y), rl.WHITE);
+        }
+
+        var w: usize = 0;
+        while (w < polygon2.len) : (w += 1) {
+            const p1 = polygon2[w];
+            const p2 = polygon2[(w + 1) % polygon2.len];
+            rl.DrawLine(@intFromFloat(p1.x), @intFromFloat(p1.y), @intFromFloat(p2.x), @intFromFloat(p2.y), rl.WHITE);
         }
     }
 
